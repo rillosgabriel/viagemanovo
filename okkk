@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8" />
+<title>Controle Multiplas Parcelas - Viagem Ano Novo</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; }
+  h2 { color: #333; }
+  select, input { margin: 5px; padding: 6px; font-size: 14px; }
+  .amigo {
+    background: white;
+    padding: 10px 20px;
+    margin: 10px 0;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+  }
+  .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .status {
+    font-weight: bold;
+    cursor: pointer;
+    user-select: none;
+  }
+  .pago { color: green; }
+  .pendente { color: red; }
+  button {
+    margin-top: 5px;
+    padding: 5px 10px;
+    font-size: 14px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    background-color: #007bff;
+    color: white;
+  }
+</style>
+</head>
+<body>
+
+<h2>📋 Painel Completo de Pagamentos – Viagem Ano Novo 2025/2026</h2>
+<p><strong>Chave Pix:</strong> 06279404714 | <strong>Valor padrão:</strong> R$130,00 por mês | <strong>6 parcelas mensais</strong></p>
+<p><em>Use o botão "Editar" para ajustar nome ou valor. Clique no status para alternar Pago/Pendente.</em></p>
+
+<label for="parcela">Selecione a parcela (mês):</label>
+<select id="parcela" onchange="mostrarParcela()">
+  <option value="parcela1">Parcela 1 - Agosto 2025</option>
+  <option value="parcela2">Parcela 2 - Setembro 2025</option>
+  <option value="parcela3">Parcela 3 - Outubro 2025</option>
+  <option value="parcela4">Parcela 4 - Novembro 2025</option>
+  <option value="parcela5">Parcela 5 - Dezembro 2025</option>
+  <option value="parcela6">Parcela 6 - Janeiro 2026</option>
+</select>
+
+<div id="parcelas-container">
+
+<!-- Parcelas geradas pelo JavaScript -->
+
+</div>
+
+<script>
+// Dados iniciais
+const participantes = [
+  "Stefania", "Tiago", "Danielle", "João Vitor", "Gabriel", "Lorrainy",
+  "Guilherme", "Kaline", "JC", "Juliana", "Gustavo", "Lucas", "Pietra"
+];
+
+const valorPadrao = 130.00;
+const totalParcelas = 6;
+
+const parcelasContainer = document.getElementById("parcelas-container");
+const selectParcela = document.getElementById("parcela");
+
+// Estado dos pagamentos
+// Estrutura: { parcela1: { "Nome": {status: "pendente"|"pago", valor: number} }, parcela2: {...}, ... }
+let pagamentos = {};
+
+// Inicializar os pagamentos
+function inicializarPagamentos() {
+  for (let i = 1; i <= totalParcelas; i++) {
+    const key = "parcela" + i;
+    pagamentos[key] = {};
+    participantes.forEach(nome => {
+      pagamentos[key][nome] = { status: "pendente", valor: valorPadrao };
+    });
+  }
+}
+
+// Gerar HTML da parcela
+function gerarParcelaHtml(parcelaKey) {
+  let html = `<div id="${parcelaKey}" class="parcela" style="display:none">`;
+  for (const nome of participantes) {
+    const p = pagamentos[parcelaKey][nome];
+    html += `
+      <div class="amigo">
+        <div class="row">
+          <span><strong>Nome:</strong> <span class="nome">${nome}</span></span>
+          <span class="status ${p.status}" onclick="toggleStatus('${parcelaKey}', '${nome}', this)">${capitalize(p.status)}</span>
+        </div>
+        <div class="row">
+          <span><strong>Valor:</strong> R$<span class="valor">${p.valor.toFixed(2)}</span></span>
+          <button class="editar" onclick="editar('${parcelaKey}', '${nome}')">Editar</button>
+        </div>
+      </div>
+    `;
+  }
+  html += "</div>";
+  return html;
+}
+
+function capitalize(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+// Renderizar todas parcelas no container
+function renderizarParcelas() {
+  parcelasContainer.innerHTML = "";
+  for (let i = 1; i <= totalParcelas; i++) {
+    parcelasContainer.innerHTML += gerarParcelaHtml("parcela" + i);
+  }
+}
+
+// Mostrar a parcela selecionada
+function mostrarParcela() {
+  const selecionada = selectParcela.value;
+  const todas = document.querySelectorAll(".parcela");
+  todas.forEach(div => div.style.display = "none");
+  document.getElementById(selecionada).style.display = "block";
+}
+
+// Alternar status Pago/Pendente
+function toggleStatus(parcelaKey, nome, el) {
+  const p = pagamentos[parcelaKey][nome];
+  if (p.status === "pendente") {
+    p.status = "pago";
+  } else {
+    p.status = "pendente";
+  }
+  el.classList.toggle("pago");
+  el.classList.toggle("pendente");
+  el.textContent = capitalize(p.status);
+}
+
+// Editar nome ou valor
+function editar(parcelaKey, nome) {
+  const novoNome = prompt("Editar nome:", nome);
+  if (novoNome && novoNome.trim() !== "") {
+    // Atualizar nome na lista e estado
+    const nomeTrim = novoNome.trim();
+    // Atualiza em todas parcelas (mantém integridade)
+    for (let i = 1; i <= totalParcelas; i++) {
+      const key = "parcela" + i;
+      if (pagamentos[key][nome]) {
+        pagamentos[key][nomeTrim] = pagamentos[key][nome];
+        delete pagamentos[key][nome];
+      }
+    }
+    // Atualiza array participantes também
+    const idx = participantes.indexOf(nome);
+    if (idx !== -1) participantes[idx] = nomeTrim;
+  }
+
+  const valorAtual = pagamentos[parcelaKey][novoNome ? novoNome.trim() : nome].valor;
+  const novoValor = prompt("Editar valor (R$):", valorAtual.toFixed(2));
+  if (novoValor && !isNaN(novoValor)) {
+    pagamentos[parcelaKey][novoNome ? novoNome.trim() : nome].valor = parseFloat(novoValor);
+  }
+
+  renderizarParcelas();
+  mostrarParcela();
+}
+
+// Inicializa tudo
+inicializarPagamentos();
+renderizarParcelas();
+mostrarParcela();
+
+</script>
+
+</body>
+</html>
